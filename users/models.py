@@ -23,11 +23,27 @@ class User(AbstractUser):
     def token(self):
         return self._generate_jwt_token()
 
+    @property
+    def refresh_token(self):
+        return self._generate_refresh_jwt_token()
+
     def _generate_jwt_token(self):
 
         payload = {
             'id': self.id,
             'exp': date.datetime.utcnow() + date.timedelta(minutes=60),
+            'iat': date.datetime.utcnow()
+        }
+
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
+        return token
+
+    def _generate_refresh_jwt_token(self):
+
+        payload = {
+            'id': self.id,
+            'exp': date.datetime.utcnow() + date.timedelta(hours=24),
             'iat': date.datetime.utcnow()
         }
 

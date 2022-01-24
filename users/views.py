@@ -40,13 +40,17 @@ class SignInView(APIView):
         if password is None:
             raise AuthenticationFailed('Please enter the password!')
 
-        token = user.token
+        access_token = user.token
+        refresh_token = user.refresh_token
 
         response = Response()
-        response.set_cookie(key='jwt', value=token, httponly=True)
+
+        response.set_cookie(key='access', value=access_token, httponly=True)
+        response.set_cookie(key='refresh', value=refresh_token, httponly=True)
 
         response.data = {
-            'jwt': token
+            'access': access_token,
+            'refresh': refresh_token
         }
 
         return response
@@ -55,7 +59,7 @@ class SignInView(APIView):
 class UserView(APIView):
 
     def get(self, request):
-        token = request.COOKIES.get('jwt')
+        token = request.COOKIES.get('access')
 
         if not token:
             raise AuthenticationFailed('Unauthenticated!')
@@ -79,8 +83,37 @@ class LogoutView(APIView):
 
     def post(self, request):
         response = Response()
-        response.delete_cookie('jwt')
+        response.delete_cookie('access')
+        response.delete_cookie('refresh')
         response.data = {
             'message': 'success'
         }
+        return response
+
+
+class RefreshTokenView(APIView):
+
+    def post(self, request):
+
+        refresh_token = request.COOKIES.get('refresh')
+
+        if not refresh_token:
+            raise AuthenticationFailed('Unauthenticated!')
+
+        try:
+            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=['HS256'])
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed('Unauthenticated!')
+
+        try:
+            user = User.objects.filter(id=payload['id']).first()
+        except User.DoesNotExist:
+            raise AuthenticationFailed('Unauthenticated')
+
+        response = Response()
+        response.data = {
+            'access': user.token,
+            'refresh': user.refresh_token
+        }
+
         return response
