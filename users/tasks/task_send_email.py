@@ -1,6 +1,5 @@
 from users.tasks.utils import utils as task_utils
 from celery.utils.log import get_task_logger
-from auth.celery import app
 from celery import shared_task
 
 logger = get_task_logger(__name__)

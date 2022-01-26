@@ -10,7 +10,7 @@ app = Celery('auth')
 app.config_from_object('django.conf:settings')
 
 app.conf.beat_schedule = {
-    'send-email-every-10-seconds': {
+    'send-email-once-a-week': {
         'task': 'users.tasks.task_send_email.task_to_send_email',
         'schedule': crontab(hour=12, minute=0, day_of_week=1)
     }
